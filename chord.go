@@ -81,9 +81,10 @@ func (c *Chord) Use(tw ...ThreadWrapper) {
 type ThreadWrapper func(Thread) Thread
 
 // RegisterWrapped adds a wrapped thread to the threads with the given key.
+// - wraps in FIFO order, where first is the bigger wrapper
 func (c *Chord) RegisterWrapped(key string, tw ...ThreadWrapper) {
 	var thread Thread
-	for i := range tw {
+	for i := len(tw)-1; i > 0; i-- {
 		thread = tw[i](thread)
 	}
 	
