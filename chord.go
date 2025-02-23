@@ -42,8 +42,8 @@ type Chord struct {
 	threads sync.Map
 	
 	// chords is a sync map that maps keys to composite type
-	// - key: string -> name chord
-	// - val: chord  -> chord itself
+	// - key: string     -> name chord
+	// - val: ref chord  -> ref chord itself
 	chords sync.Map
 
 	// middlewares is a slice of thread wrappers allowing to get wrapped in a pipeline pattern
@@ -52,8 +52,37 @@ type Chord struct {
 	middlewares []ThreadWrapper
 }
 
+// FetchThread retrieves a thread from threads
+func (c *Chord) FetchThread(key string) (Thread, bool) {
+	thread, ok := c.threads.Load(key)
+	if !ok {
+		return nil, false
+	}
+
+	return thread.(Thread), true
+}
+
+// FetchChord retreves a chord from chords
+func (c *Chord) FetchChord(key string) (*Chord, bool) {
+	chord, ok := c.chords.Load(key)
+	if !ok {
+		return nil, false
+	}
+
+	return chord.(*Chord), true
+}
+
+// FetchMiddlewares returns a copy of the slice of middlewares
+func (c *Chord) FetchMiddlewares() []ThreadWrapper {
+	md := make([]ThreadWrapper, len(c.middlewares))
+	copy(md, c.middlewares)
+	return md
+}
+
 // Register adds a thread to the threads with the given key.
-func (c *Chord) Register(key string, thread Thread) {
+// - it also allows to add thread-wrappers in FIFO order
+func (c *Chord) Register(key string, thread Thread, tw ...ThreadWrapper) {
+	thread = WrapThreads(thread, tw...)
 	c.threads.Store(key, thread)
 }
 
@@ -80,13 +109,10 @@ func (c *Chord) Use(tw ...ThreadWrapper) {
 // ThreadWrapper is a function type that wraps a Thread.
 type ThreadWrapper func(Thread) Thread
 
-// RegisterWrapped adds a wrapped thread to the threads with the given key.
-// - wraps in FIFO order, where first is the bigger wrapper
-func (c *Chord) RegisterWrapped(key string, tw ...ThreadWrapper) {
-	var thread Thread
-	for i := len(tw)-1; i > 0; i-- {
+// WrapThreads builds the fully wrapped thread as a pipeline in FIFO order
+func WrapThreads(thread Thread, tw ...ThreadWrapper) Thread {
+	for i := len(tw) - 1; i > 0; i-- {
 		thread = tw[i](thread)
 	}
-	
-	c.threads.Store(key, thread)
+	return thread
 }
