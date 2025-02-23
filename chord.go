@@ -116,3 +116,34 @@ func WrapThreads(thread Thread, tw ...ThreadWrapper) Thread {
 	}
 	return thread
 }
+
+// Match backtracks the thread while wrapping it up through the different middlewares in the layers
+func Match(node *Chord, path []string) (Thread, bool) {
+	// limit cases
+	if len(path) == 0 {
+		return nil, false
+	}
+	// leaf case
+	// - fetch thread and wrapped it
+	if len(path) == 1 {
+		thread, ok := node.FetchThread(path[0])
+		if !ok {
+			return nil, false
+		}
+		thread = WrapThreads(thread, node.FetchMiddlewares()...)
+		return thread, true
+	}
+
+	// next chord
+	chord, ok := node.FetchChord(path[0])
+	if !ok {
+		return nil, false
+	}
+	// recursive call to delegate the match
+	thread, ok := Match(chord, path[1:])
+	if !ok {
+		return nil, false
+	}
+	thread = WrapThreads(thread, chord.FetchMiddlewares()...)
+	return thread, true
+}
