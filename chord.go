@@ -30,12 +30,12 @@ type Input struct {
 
 // Output represents the output from a thread, using a buffered read-writer.
 type Output struct {
-	*bufio.ReadWriter // Embedded buffered read-writer for thread output.
+	bufio.ReadWriter // Embedded buffered read-writer for thread output.
 }
 
 // Thread is a function type that takes an Input and an Output.
 // This defines the basic execution unit in the chord system.
-type Thread func(Input, Output)
+type Thread func(*Input, *Output)
 
 // Chord holds a collection of threads and composite chords, managed via sync.Map
 // for safe concurrent access. It also supports middleware that can be applied
