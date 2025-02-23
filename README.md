@@ -44,10 +44,10 @@ import (
 
 func main() {
 	// Create a new chord instance.
-	rootChord := &chord.Chord{}
+	rootChord := NewChord()
 
 	// Define a simple thread-handler that writes a greeting.
-	helloHandler := func(input chord.Input, output chord.Output) {
+	helloHandler := func(input *chord.Input, output *chord.Output) {
 		greeting := "Hello, " + input.Args[0] + "!"
 		output.WriteString(greeting)
 		output.Flush()
@@ -58,7 +58,7 @@ func main() {
 
 	// Define a middleware to log thread-handler execution.
 	logMiddleware := func(next chord.Thread) chord.Thread {
-		return func(input chord.Input, output chord.Output) {
+		return func(input *chord.Input, output *chord.Output) {
 			fmt.Println("Executing handler:", input.Key)
 			next(input, output)
 			fmt.Println("Finished handler:", input.Key)
@@ -70,11 +70,11 @@ func main() {
 
 	// Setup a buffered read-writer for handler output.
 	rw := bufio.NewReadWriter(bufio.NewReader(os.Stdin), bufio.NewWriter(os.Stdout))
-	output := chord.Output{ReadWriter: rw}
+	output := &chord.Output{ReadWriter: rw}
 
 	// Use the Match function to retrieve the handler by its path.
 	if handler, ok := chord.Match(rootChord, []string{"hello"}); ok {
-		input := chord.Input{
+		input := &chord.Input{
 			Key:  "hello",
 			Args: []string{"World"},
 		}
