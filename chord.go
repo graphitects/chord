@@ -57,6 +57,15 @@ type Chord struct {
 	middlewares []ThreadWrapper
 }
 
+// NewChord returns an instance of a Chord
+func NewChord() *Chord {
+	return &Chord{
+		threads: sync.Map{},
+		chords: sync.Map{},
+		middlewares: make([]ThreadWrapper, 0),
+	}
+}
+
 // FetchThread retrieves a thread from the threads map using its key.
 // Returns the thread and true if found, or nil and false otherwise.
 func (c *Chord) FetchThread(key string) (Thread, bool) {
